@@ -1,16 +1,14 @@
 "use client";
 
+import { bizCol, bizDoc } from "@/lib/business";
 import { create } from "zustand";
 import {
-  collection,
-  doc,
   onSnapshot,
   addDoc,
   updateDoc,
   query,
   orderBy,
 } from "firebase/firestore";
-import { clientDb } from "@/lib/firebase-config";
 import { sortByAlphabet } from "@/lib/list-utils";
 import { asTimestamp } from "@/lib/firestore-timestamp";
 import { normalizeMenuItemOptionGroupIds } from "@/lib/menu-item-option-groups";
@@ -28,7 +26,7 @@ export const useItemStore = create<ItemState>((set) => ({
   loading: true,
 
   subscribe: () => {
-    const ref = collection(clientDb, "menuItems");
+    const ref = bizCol("menuItems");
     const q = query(ref, orderBy("createdAt", "desc"));
     const unsub = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map((doc) => {
@@ -49,12 +47,12 @@ export const useItemStore = create<ItemState>((set) => ({
   },
 
   createItem: async (item) => {
-    const ref = collection(clientDb, "menuItems");
+    const ref = bizCol("menuItems");
     await addDoc(ref, item);
   },
 
   updateItem: async (id, item) => {
-    const ref = doc(clientDb, "menuItems", id);
+    const ref = bizDoc("menuItems", id);
     await updateDoc(ref, item);
   },
 }));

@@ -1,19 +1,17 @@
 "use client";
 
+import { bizCol, bizDoc } from "@/lib/business";
 import { create } from "zustand";
 import {
   Timestamp,
   addDoc,
-  collection,
   deleteDoc,
-  doc,
   onSnapshot,
   orderBy,
   query,
   setDoc,
   updateDoc,
 } from "firebase/firestore";
-import { clientDb } from "@/lib/firebase-config";
 import { asTimestamp } from "@/lib/firestore-timestamp";
 import { sortByAlphabet } from "@/lib/list-utils";
 
@@ -23,7 +21,7 @@ const CUSTOMERS_VERSION_DOC = "versionDoc";
 // POS clients subscribe to this doc and refetch customers when it advances.
 async function bumpCustomersVersion(): Promise<void> {
   await setDoc(
-    doc(clientDb, CUSTOMERS_VERSION_COLLECTION, CUSTOMERS_VERSION_DOC),
+    bizDoc(CUSTOMERS_VERSION_COLLECTION, CUSTOMERS_VERSION_DOC),
     { version: Date.now() },
     { merge: true },
   );
@@ -50,7 +48,7 @@ export const useCustomerStore = create<CustomerState>((set) => ({
   error: null,
 
   subscribe: () => {
-    const ref = collection(clientDb, "customers");
+    const ref = bizCol("customers");
     const q = query(ref, orderBy("createdAt", "desc"));
     const unsub = onSnapshot(
       q,
@@ -79,7 +77,7 @@ export const useCustomerStore = create<CustomerState>((set) => ({
   },
 
   createCustomer: async (data) => {
-    const ref = collection(clientDb, "customers");
+    const ref = bizCol("customers");
     await addDoc(ref, {
       ...data,
       createdAt: Timestamp.now(),
@@ -91,12 +89,12 @@ export const useCustomerStore = create<CustomerState>((set) => ({
   },
 
   deleteCustomer: async (id) => {
-    const ref = doc(clientDb, "customers", id);
+    const ref = bizDoc("customers", id);
     await deleteDoc(ref);
   },
 
   updateCustomer: async (id, data) => {
-    const ref = doc(clientDb, "customers", id);
+    const ref = bizDoc("customers", id);
     await updateDoc(ref, { ...data, createdAt: Timestamp.now() });
     await bumpCustomersVersion();
   },

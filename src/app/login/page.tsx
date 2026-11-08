@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { signInWithEmailAndPassword } from "firebase/auth";
+import { adminBusinessFromClaims } from "@/lib/business";
 import { auth } from "@/lib/firebase-config";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -27,10 +28,10 @@ export default function LoginPage() {
 
       const tokenResult = await user.getIdTokenResult();
 
-      if (tokenResult.claims.role === "admin") {
+      if (adminBusinessFromClaims(tokenResult.claims)) {
         router.push("/");
       } else {
-        setError("Access denied: You are not an admin.");
+        setError("Access denied: this account isn't an admin of a business.");
         await auth.signOut();
       }
     } catch (err: unknown) {

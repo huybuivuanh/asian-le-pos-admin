@@ -1,11 +1,14 @@
-// src/app/api/createUser/route.ts
 import { NextResponse } from "next/server";
 import { Timestamp } from "firebase-admin/firestore";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
+import { errorResponse, requireAdmin, requireRole } from "../_auth";
 
+/** Admin creates a staff/admin account in their own business. */
 export async function POST(req: Request) {
   try {
-    const { email, password, name, role } = await req.json();
+    const caller = await requireAdmin(req);
+    const { email, password, name, role: rawRole } = await req.json();
+    const role = requireRole(rawRole);
 
     const adminAuth = getAdminAuth();
     const adminDb = getAdminDb();
@@ -16,22 +19,19 @@ export async function POST(req: Request) {
       displayName: name,
     });
 
-    // 2️⃣ Assign role via custom claims
-    await adminAuth.setCustomUserClaims(userRecord.uid, { role });
-
-    // 3️⃣ Create Firestore document
-    await adminDb.collection("users").doc(userRecord.uid).set({
-      name,
-      email,
+    // Business + role as custom claims: the apps and security rules check these.
+    await adminAuth.setCustomUserClaims(userRecord.uid, {
+      businessId: caller.businessId,
       role,
-      createdAt: Timestamp.now(),
     });
+
+    // Staff list for display (POS staff picker, this app's Users page).
+    await adminDb
+      .doc(`businesses/${caller.businessId}/users/${userRecord.uid}`)
+      .set({ name, email, role, createdAt: Timestamp.now() });
 
     return NextResponse.json({ uid: userRecord.uid });
   } catch (err: unknown) {
-    console.error(err);
-    const errorMessage =
-      err instanceof Error ? err.message : "An unknown error occurred";
-    return NextResponse.json({ error: errorMessage }, { status: 400 });
+    return errorResponse(err);
   }
 }

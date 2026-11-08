@@ -6,7 +6,8 @@
  *
  * Use these instead of calling two store actions one after another.
  */
-import { doc, writeBatch } from "firebase/firestore";
+import { bizDoc } from "@/lib/business";
+import { writeBatch } from "firebase/firestore";
 import { clientDb } from "@/lib/firebase-config";
 import {
   itemReferencesOptionGroup,
@@ -43,7 +44,7 @@ async function commit(writes: Write[]) {
   // clientDb is read here (not at import) so the demo database switch applies.
   const batch = writeBatch(clientDb);
   for (const w of writes) {
-    const ref = doc(clientDb, w.collection, w.id);
+    const ref = bizDoc(w.collection, w.id);
     if (w.kind === "update") batch.update(ref, w.data);
     else batch.delete(ref);
   }

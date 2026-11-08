@@ -1,23 +1,22 @@
 import { NextResponse } from "next/server";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
+import { HttpError, errorResponse, requireAdmin, requireSameBusiness } from "../_auth";
 
+/** Admin deletes a staff/admin account in their own business. */
 export async function POST(req: Request) {
   try {
+    const caller = await requireAdmin(req);
     const { uid } = await req.json();
-    if (!uid) throw new Error("UID is required");
+    const target = await requireSameBusiness(uid, caller);
+    if (target.uid === caller.uid) {
+      throw new HttpError(400, "You can't delete your own account here.");
+    }
 
-    const adminAuth = getAdminAuth();
-    const adminDb = getAdminDb();
-
-    await adminAuth.deleteUser(uid);
-
-    await adminDb.collection("users").doc(uid).delete();
+    await getAdminAuth().deleteUser(target.uid);
+    await getAdminDb().doc(`businesses/${caller.businessId}/users/${target.uid}`).delete();
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
-    console.error(err);
-    const errorMessage =
-      err instanceof Error ? err.message : "An unknown error occurred";
-    return NextResponse.json({ error: errorMessage }, { status: 400 });
+    return errorResponse(err);
   }
 }

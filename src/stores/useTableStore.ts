@@ -1,9 +1,8 @@
 "use client";
 
+import { bizCol, bizDoc } from "@/lib/business";
 import { create } from "zustand";
 import {
-  collection,
-  doc,
   onSnapshot,
   updateDoc,
   deleteDoc,
@@ -61,7 +60,7 @@ export const useTableStore = create<TableState>((set) => ({
   loading: true,
 
   subscribe: () => {
-    const ref = collection(clientDb, "tables");
+    const ref = bizCol("tables");
     const unsub = onSnapshot(ref, (snapshot) => {
       const data = snapshot.docs.map((d) => {
         const raw = d.data();
@@ -84,7 +83,7 @@ export const useTableStore = create<TableState>((set) => ({
 
   createTable: async (table) => {
     const tableNumber = normalizeTableNumber(table.tableNumber);
-    const ref = doc(clientDb, "tables", tableNumber);
+    const ref = bizDoc("tables", tableNumber);
     await runTransaction(clientDb, async (tx) => {
       const existing = await tx.get(ref);
       if (existing.exists()) {
@@ -103,8 +102,8 @@ export const useTableStore = create<TableState>((set) => ({
     const nextId = normalizeTableNumber(newTableNumber);
     if (nextId === oldId) return;
 
-    const oldRef = doc(clientDb, "tables", oldId);
-    const newRef = doc(clientDb, "tables", nextId);
+    const oldRef = bizDoc("tables", oldId);
+    const newRef = bizDoc("tables", nextId);
     await runTransaction(clientDb, async (tx) => {
       const [oldSnap, newSnap] = await Promise.all([
         tx.get(oldRef),
@@ -128,12 +127,12 @@ export const useTableStore = create<TableState>((set) => ({
   },
 
   updateTable: async (id, table) => {
-    const ref = doc(clientDb, "tables", id);
+    const ref = bizDoc("tables", id);
     await updateDoc(ref, table);
   },
 
   deleteTable: async (id) => {
-    const ref = doc(clientDb, "tables", id);
+    const ref = bizDoc("tables", id);
     await deleteDoc(ref);
   },
 }));

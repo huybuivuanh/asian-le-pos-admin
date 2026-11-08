@@ -23,7 +23,7 @@ src/
 │   │   ├── (standard)/     # Full-width pages: dashboard (/), orders, tables, customers, credits, users, …
 │   │   └── menu/           # Collapsible sidebar + /menu/{categories,items,option-groups,options}
 │   ├── login/              # Sign-in page
-│   └── api/users/          # Server-side user management (firebase-admin)
+│   └── api/users/          # Server-side user management (firebase-admin); _auth.ts = admin token + business checks
 ├── features/               # Domain feature modules (named exports, file name = component name)
 │   ├── add-extras/         # AddExtraList, AddExtraForm
 │   ├── credits/            # CreditList, CreditTableRow, CreditForm
@@ -37,16 +37,15 @@ src/
 │   │   └── MenuSidebar.tsx
 │   ├── menu-changes/       # MenuChangeList, MenuChangeCard, MenuChangeForm, ItemChangeForm
 │   ├── orders/             # OrderHistoryView, OrderCard, OrderItemBlock, RewardsBadge
-│   ├── rewards/            # RewardsSignInCard (dashboard)
 │   ├── tables/             # TablesSection, AddTableDialog, EditTableDialog
 │   └── users/              # UserList, UserForm
 ├── stores/                 # Zustand stores, one per domain (+ useModalStore for popups)
 ├── providers/              # AuthProvider
 ├── services/               # userService (calls Next.js API routes), rewardsService (Rewards Cloud Functions)
 ├── lib/                    # Shared utilities and Firestore helpers
-│   ├── firebase-config.ts  # Firebase client SDK init (+ demo database switch)
+│   ├── firebase-config.ts  # Firebase client SDK init (shared asianlepos project)
+│   ├── business.ts         # current business from the admin's claim; bizCol/bizDoc path helpers
 │   ├── firebase-admin.ts   # Firebase Admin SDK init
-│   ├── rewards-firebase.ts # Second Firebase app for the Rewards project
 │   ├── linked-writes.ts    # Atomic (batched) writes for linked menu docs
 │   ├── order-history-firestore.ts  # Order queries + print/paid/complete/cancel writes
 │   ├── order-loyalty.ts    # Reverses rewards points on cancel
@@ -58,7 +57,6 @@ src/
 │   ├── menu-unused.ts      # isUnusedItem/OptionGroup/Option (Unused badge + filter)
 │   ├── option-group-updates.ts
 │   ├── firestore-timestamp.ts
-│   ├── demo.ts
 │   └── utils.ts            # cn() helper
 ├── components/
 │   ├── ui/                 # Radix UI primitives (Button, Dialog, Input, Select, …)
@@ -103,3 +101,14 @@ Firebase Auth with custom claims for role-based access. `AuthProvider` persists 
 - **UI style** (matches asian-le-website-admin): page header = `PageHeader` (title + count + actions). List rows use `rowCardClass` / `rowHeaderClass` / `RowActions` (Edit + red Delete) / `RemoveButton` / `EmptyState` from `@/components/layout/RowParts`. Brand colors `ink`, `gold`, `on-ink` live in `globals.css`.
 - **Linked menu data**: categories ↔ items, items ↔ option groups, option groups ↔ options keep id lists on both sides. Change or delete them only through `@/lib/linked-writes` (one Firestore batch each), never with two separate store calls.
 - **Popups**: never use `window.alert` / `window.confirm`. Use `alertDialog` / `confirmDialog` from `@/stores/useModalStore` (`{ danger: true, confirmLabel: "Delete" }` for deletes).
+
+## Shared Firebase project
+
+pos-admin uses the shared `asianlepos` project with the POS, KDS, Orders app, website and rewards.
+
+- **All data is under `businesses/{businessId}/…`** — build client paths with `bizCol` / `bizDoc` (`src/lib/business.ts`), never `collection(clientDb, …)`.
+- **Only admins sign in:** custom claims `{ businessId, role: "admin" }`. `AuthProvider` checks after sign-in and on restore, sets the business, and signs out anyone else.
+- **User API routes** (`src/app/api/users/*`) use the Admin SDK, which skips security rules, so `_auth.ts` checks every call: the client sends the admin's ID token (`postAsAdmin` in `userService.ts`), `requireAdmin` verifies it, and the business always comes from that token — never the request body. Update/delete only touch users of the same business; an admin can't demote or delete themselves.
+- **Roles** are `staff` (POS, KDS, Orders app) and `admin` (everything). Creating/updating a user sets claims `{ businessId, role }` and writes the display copy to `businesses/{id}/users/{uid}`.
+- **Rewards** functions (same project) are called with the admin's login.
+- Security rules live in the separate `D:\Projects\asian-le-firebase` repo. The App Store review Demo is just another business.

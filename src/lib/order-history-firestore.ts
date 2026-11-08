@@ -1,6 +1,6 @@
+import { bizCol } from "@/lib/business";
 import {
   Timestamp,
-  collection,
   doc,
   getDocs,
   orderBy,
@@ -111,7 +111,7 @@ export async function fetchOrdersForHistory(
     channel === "takeOut"
       ? TAKE_OUT_ORDERS_COLLECTION
       : DINE_IN_ORDERS_COLLECTION;
-  const ref = collection(clientDb, colName);
+  const ref = bizCol(colName);
   const bounds = localDayBoundsFromDateKey(dateKey);
   if (bounds == null) {
     return [];
@@ -135,7 +135,7 @@ export async function fetchAllTakeOutOrders(): Promise<
 > {
   const snap = await getDocs(
     query(
-      collection(clientDb, TAKE_OUT_ORDERS_COLLECTION),
+      bizCol(TAKE_OUT_ORDERS_COLLECTION),
       orderBy("createdAt", "desc"),
     ),
   );
@@ -148,13 +148,13 @@ export async function fetchOrdersForAnalytics(): Promise<
   const [takeOutSnap, dineInSnap] = await Promise.all([
     getDocs(
       query(
-        collection(clientDb, TAKE_OUT_ORDERS_COLLECTION),
+        bizCol(TAKE_OUT_ORDERS_COLLECTION),
         orderBy("createdAt", "desc"),
       ),
     ),
     getDocs(
       query(
-        collection(clientDb, DINE_IN_ORDERS_COLLECTION),
+        bizCol(DINE_IN_ORDERS_COLLECTION),
         orderBy("createdAt", "desc"),
       ),
     ),
@@ -186,7 +186,7 @@ type OrderDraft = Partial<Order> & {
 
 export const submitToPrintQueue = async (order: OrderDraft) => {
   if (!order.id) throw new Error("Order ID is required to print.");
-  const printQueueRef = doc(collection(clientDb, "printQueue"));
+  const printQueueRef = doc(bizCol("printQueue"));
   const forPrint: OrderDraft = {
     ...order,
     printed: false,
@@ -206,14 +206,14 @@ async function setOrderStatus(order: OrderDraft, status: OrderStatus): Promise<v
       ? TAKE_OUT_ORDERS_COLLECTION
       : DINE_IN_ORDERS_COLLECTION;
   const batch = writeBatch(clientDb);
-  batch.update(doc(collection(clientDb, colName), order.id!), { status });
+  batch.update(doc(bizCol(colName), order.id!), { status });
 
   const finished =
     status === OrderStatus.Completed || status === OrderStatus.Cancelled;
   if (order.orderType === OrderType.DineIn && finished && order.tableNumber) {
     const tables = await getDocs(
       query(
-        collection(clientDb, "tables"),
+        bizCol("tables"),
         where("tableNumber", "==", order.tableNumber),
         where("currentOrderId", "==", order.id),
       ),
@@ -266,7 +266,7 @@ export const markOrderPaid = async (
     ...item,
     paid,
   }));
-  const orderRef = doc(collection(clientDb, colName), order.id);
+  const orderRef = doc(bizCol(colName), order.id);
   await updateDoc(orderRef, {
     orderItems: nextItems,
   });

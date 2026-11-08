@@ -1,16 +1,14 @@
 "use client";
 
+import { bizCol, bizDoc } from "@/lib/business";
 import { create } from "zustand";
 import {
-  collection,
-  doc,
   onSnapshot,
   addDoc,
   updateDoc,
   query,
   orderBy,
 } from "firebase/firestore";
-import { clientDb } from "@/lib/firebase-config";
 import { sortByAlphabet } from "@/lib/list-utils";
 import { asTimestamp } from "@/lib/firestore-timestamp";
 
@@ -27,7 +25,7 @@ export const useOptionGroupStore = create<OptionGroupState>((set) => ({
   loading: true,
 
   subscribe: () => {
-    const ref = collection(clientDb, "optionGroups");
+    const ref = bizCol("optionGroups");
     const q = query(ref, orderBy("createdAt", "desc"));
     const unsub = onSnapshot(q, (snapshot) => {
       const data = snapshot.docs.map((doc) => {
@@ -50,12 +48,12 @@ export const useOptionGroupStore = create<OptionGroupState>((set) => ({
   },
 
   createOptionGroup: async (group) => {
-    const ref = collection(clientDb, "optionGroups");
+    const ref = bizCol("optionGroups");
     await addDoc(ref, group);
   },
 
   updateOptionGroup: async (id, group) => {
-    const ref = doc(clientDb, "optionGroups", id);
+    const ref = bizDoc("optionGroups", id);
     await updateDoc(ref, group);
   },
 }));

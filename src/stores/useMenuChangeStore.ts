@@ -1,18 +1,16 @@
 "use client";
 
+import { bizCol, bizDoc } from "@/lib/business";
 import { create } from "zustand";
 import {
   Timestamp,
   addDoc,
-  collection,
   deleteDoc,
-  doc,
   onSnapshot,
   orderBy,
   query,
   updateDoc,
 } from "firebase/firestore";
-import { clientDb } from "@/lib/firebase-config";
 import { asTimestamp } from "@/lib/firestore-timestamp";
 
 type MenuChangeState = {
@@ -55,7 +53,7 @@ export const useMenuChangeStore = create<MenuChangeState>((set, get) => ({
   error: null,
 
   subscribe: () => {
-    const ref = collection(clientDb, "menuChanges");
+    const ref = bizCol("menuChanges");
     const q = query(ref, orderBy("createdAt", "desc"));
     const unsub = onSnapshot(
       q,
@@ -85,7 +83,7 @@ export const useMenuChangeStore = create<MenuChangeState>((set, get) => ({
   },
 
   createMenuChange: async (name) => {
-    const ref = collection(clientDb, "menuChanges");
+    const ref = bizCol("menuChanges");
     await addDoc(ref, {
       name: normalizeName(name),
       changes: [],
@@ -94,19 +92,19 @@ export const useMenuChangeStore = create<MenuChangeState>((set, get) => ({
   },
 
   renameMenuChange: async (id, name) => {
-    const ref = doc(clientDb, "menuChanges", id);
+    const ref = bizDoc("menuChanges", id);
     await updateDoc(ref, { name: normalizeName(name) });
   },
 
   deleteMenuChange: async (id) => {
-    const ref = doc(clientDb, "menuChanges", id);
+    const ref = bizDoc("menuChanges", id);
     await deleteDoc(ref);
   },
 
   addItemChange: async (id, change) => {
     const current = get().menuChanges.find((mc) => mc.id === id);
     if (!current) throw new Error("Menu change not found.");
-    const ref = doc(clientDb, "menuChanges", id);
+    const ref = bizDoc("menuChanges", id);
     await updateDoc(ref, {
       changes: [...current.changes, normalizeItemChange(change)],
     });
@@ -119,7 +117,7 @@ export const useMenuChangeStore = create<MenuChangeState>((set, get) => ({
       throw new Error("Item change not found.");
     }
     const next = normalizeItemChange(change);
-    const ref = doc(clientDb, "menuChanges", id);
+    const ref = bizDoc("menuChanges", id);
     await updateDoc(ref, {
       changes: current.changes.map((c, i) => (i === index ? next : c)),
     });
@@ -128,7 +126,7 @@ export const useMenuChangeStore = create<MenuChangeState>((set, get) => ({
   removeItemChange: async (id, index) => {
     const current = get().menuChanges.find((mc) => mc.id === id);
     if (!current) throw new Error("Menu change not found.");
-    const ref = doc(clientDb, "menuChanges", id);
+    const ref = bizDoc("menuChanges", id);
     await updateDoc(ref, {
       changes: current.changes.filter((_, i) => i !== index),
     });

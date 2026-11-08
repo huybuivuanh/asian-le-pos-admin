@@ -27,7 +27,7 @@ export function UserForm({ user }: { user?: User }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("cashier");
+  const [role, setRole] = useState("staff");
 
   const canSubmit =
     name.trim().length > 0 &&
@@ -39,7 +39,7 @@ export function UserForm({ user }: { user?: User }) {
       setName(user?.name ?? "");
       setEmail(user?.email ?? "");
       setPassword("");
-      setRole(user?.role ?? "cashier");
+      setRole(user?.role ?? "staff");
     }
     setOpen(next);
   };
@@ -107,9 +107,9 @@ export function UserForm({ user }: { user?: User }) {
             <SelectValue placeholder="Select a role" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="cashier">Cashier</SelectItem>
-            <SelectItem value="manager">Manager</SelectItem>
-            <SelectItem value="admin">Admin</SelectItem>
+            {/* Must match the roles the apps and security rules accept. */}
+            <SelectItem value="staff">Staff (POS, KDS, Orders app)</SelectItem>
+            <SelectItem value="admin">Admin (everything, incl. this app)</SelectItem>
           </SelectContent>
         </Select>
       </div>

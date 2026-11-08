@@ -1,8 +1,10 @@
-// Calls the Rewards (loyalty) project's Cloud Functions as the signed-in POS
-// account. Mirrors the POS app's rewardsService.
+// Calls the rewards Cloud Functions (same project) with the admin's own login.
+// They take the business from the caller's `businessId` claim. Mirrors the POS app's rewardsService.
 import { FirebaseError } from "firebase/app";
-import { httpsCallable } from "firebase/functions";
-import { rewardsFunctions } from "@/lib/rewards-firebase";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { app } from "@/lib/firebase-config";
+
+const rewardsFunctions = getFunctions(app);
 
 export type ReverseOrderResult = {
   /** Net change to the member's balance (refunded redeem minus removed earn). */
@@ -11,9 +13,6 @@ export type ReverseOrderResult = {
 };
 
 async function call<In, Out>(name: string, data: In): Promise<Out> {
-  if (!rewardsFunctions) {
-    throw new Error("Rewards isn't set up (missing NEXT_PUBLIC_REWARDS_FIREBASE_* values).");
-  }
   try {
     const result = await httpsCallable<In, Out>(rewardsFunctions, name)(data);
     return result.data;
@@ -29,9 +28,9 @@ export function rewardsErrorMessage(err: unknown): string {
       case "functions/not-found":
         return err.message || "No rewards member found.";
       case "functions/unauthenticated":
-        return "Sign in to Rewards from the Dashboard page first.";
+        return "You're signed out. Sign in again to use Rewards.";
       case "functions/permission-denied":
-        return "This Rewards account doesn't have POS access.";
+        return "This account can't use Rewards.";
       case "functions/failed-precondition":
       case "functions/invalid-argument":
         return err.message || "This action isn't allowed for this order.";

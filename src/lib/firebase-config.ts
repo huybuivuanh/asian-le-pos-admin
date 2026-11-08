@@ -16,17 +16,8 @@ const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
 export const auth = getAuth(app);
 
-const productionDb = getFirestore(app);
-const demoDb = getFirestore(app, "demo");
+// One database for every business; data is under businesses/{id} (see business.ts).
+// The App Store review Demo is just another business.
+export const clientDb = getFirestore(app);
 
-// Mutable — every store/service reads this at call time (not at import time),
-// so switching it here redirects all Firestore access app-wide.
-export let clientDb = productionDb;
-
-export function setActiveDatabase(isDemo: boolean) {
-  clientDb = isDemo ? demoDb : productionDb;
-}
-
-export function isDemoDatabase(): boolean {
-  return clientDb === demoDb;
-}
+export { app };

@@ -5,9 +5,10 @@ import {
   User,
   setPersistence,
   browserLocalPersistence,
+  signOut,
 } from "firebase/auth";
-import { auth, setActiveDatabase } from "@/lib/firebase-config";
-import { DEMO_EMAIL, TEST_EMAIL } from "@/lib/demo";
+import { adminBusinessFromClaims, setBusinessId } from "@/lib/business";
+import { auth } from "@/lib/firebase-config";
 import { createContext, useContext, useEffect, useState } from "react";
 
 type AuthContextType = {
@@ -31,16 +32,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setMounted(true);
     setPersistence(auth, browserLocalPersistence);
 
-    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+    // Only admins of a business get in: the claims set the business for every
+    // Firestore path (business.ts). The access check is async; only the latest event counts.
+    let latest = 0;
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      const run = ++latest;
+      let businessId: string | null = null;
+      if (firebaseUser) {
+        try {
+          const { claims } = await firebaseUser.getIdTokenResult();
+          businessId = adminBusinessFromClaims(claims);
+        } catch {
+          businessId = null;
+        }
+        if (run !== latest) return;
+        if (!businessId) {
+          await signOut(auth); // fires again with null
+          return;
+        }
+      }
+      setBusinessId(businessId);
       if (firebaseUser) {
         localStorage.setItem("wasLoggedIn", "true");
       } else {
         localStorage.removeItem("wasLoggedIn");
       }
-      setActiveDatabase(
-        firebaseUser?.email === DEMO_EMAIL ||
-          firebaseUser?.email === TEST_EMAIL,
-      );
       setUser(firebaseUser);
       setLoading(false);
     });

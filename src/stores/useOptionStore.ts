@@ -1,16 +1,14 @@
 "use client";
 
+import { bizCol, bizDoc } from "@/lib/business";
 import { create } from "zustand";
 import {
-  collection,
   addDoc,
   updateDoc,
-  doc,
   onSnapshot,
   query,
   orderBy,
 } from "firebase/firestore";
-import { clientDb } from "@/lib/firebase-config";
 import { sortByAlphabet } from "@/lib/list-utils";
 import { asTimestamp } from "@/lib/firestore-timestamp";
 
@@ -28,7 +26,7 @@ export const useOptionStore = create<OptionStore>((set) => ({
 
   subscribe: () => {
     const q = query(
-      collection(clientDb, "options"),
+      bizCol("options"),
       orderBy("createdAt", "desc")
     );
     const unsub = onSnapshot(q, (snapshot) => {
@@ -47,10 +45,10 @@ export const useOptionStore = create<OptionStore>((set) => ({
   },
 
   createOption: async (option) => {
-    await addDoc(collection(clientDb, "options"), option);
+    await addDoc(bizCol("options"), option);
   },
 
   updateOption: async (id, data) => {
-    await updateDoc(doc(clientDb, "options", id), data);
+    await updateDoc(bizDoc("options", id), data);
   },
 }));

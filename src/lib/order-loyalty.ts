@@ -1,5 +1,6 @@
 // Reverses rewards points when an order is cancelled. Mirrors the POS app's
 // reverseCancelledOrderRewards (services/orderLoyaltyService.ts).
+import { bizDoc } from "@/lib/business";
 import {
   doc,
   getDoc,
@@ -7,7 +8,7 @@ import {
   serverTimestamp,
   updateDoc,
 } from "firebase/firestore";
-import { clientDb, isDemoDatabase } from "@/lib/firebase-config";
+import { clientDb } from "@/lib/firebase-config";
 import {
   DINE_IN_ORDERS_COLLECTION,
   TAKE_OUT_ORDERS_COLLECTION,
@@ -35,12 +36,8 @@ export async function reverseCancelledOrderRewards(
   orderId: string,
 ): Promise<ReverseRewardsResult> {
   const none: ReverseRewardsResult = { warning: null, patch: {} };
-  // Demo orders aren't linked to real rewards members.
-  if (isDemoDatabase()) return none;
 
-  const ref = doc(
-    clientDb,
-    orderType === OrderType.DineIn
+  const ref = bizDoc(orderType === OrderType.DineIn
       ? DINE_IN_ORDERS_COLLECTION
       : TAKE_OUT_ORDERS_COLLECTION,
     orderId,

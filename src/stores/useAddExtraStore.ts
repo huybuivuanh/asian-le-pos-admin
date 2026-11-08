@@ -1,17 +1,15 @@
 "use client";
 
+import { bizCol, bizDoc } from "@/lib/business";
 import { create } from "zustand";
 import {
-  collection,
   addDoc,
   updateDoc,
   deleteDoc,
-  doc,
   onSnapshot,
   query,
   orderBy,
 } from "firebase/firestore";
-import { clientDb } from "@/lib/firebase-config";
 import { asTimestamp } from "@/lib/firestore-timestamp";
 
 function capitalizeDescription(description: string): string {
@@ -36,7 +34,7 @@ export const useAddExtraStore = create<AddExtraStore>((set) => ({
 
   subscribe: () => {
     const q = query(
-      collection(clientDb, "addExtras"),
+      bizCol("addExtras"),
       orderBy("createdAt", "desc"),
     );
     const unsub = onSnapshot(q, (snapshot) => {
@@ -59,14 +57,14 @@ export const useAddExtraStore = create<AddExtraStore>((set) => ({
   },
 
   createExtra: async (extra) => {
-    await addDoc(collection(clientDb, "addExtras"), {
+    await addDoc(bizCol("addExtras"), {
       ...extra,
       description: capitalizeDescription(extra.description),
     });
   },
 
   updateExtra: async (id, data) => {
-    await updateDoc(doc(clientDb, "addExtras", id), {
+    await updateDoc(bizDoc("addExtras", id), {
       ...data,
       ...(data.description !== undefined
         ? { description: capitalizeDescription(data.description) }
@@ -75,6 +73,6 @@ export const useAddExtraStore = create<AddExtraStore>((set) => ({
   },
 
   deleteExtra: async (id) => {
-    await deleteDoc(doc(clientDb, "addExtras", id));
+    await deleteDoc(bizDoc("addExtras", id));
   },
 }));

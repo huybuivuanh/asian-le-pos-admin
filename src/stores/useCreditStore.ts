@@ -1,18 +1,16 @@
 "use client";
 
+import { bizCol, bizDoc } from "@/lib/business";
 import { create } from "zustand";
 import {
   Timestamp,
   addDoc,
-  collection,
   deleteDoc,
-  doc,
   onSnapshot,
   orderBy,
   query,
   updateDoc,
 } from "firebase/firestore";
-import { clientDb } from "@/lib/firebase-config";
 import { asTimestamp } from "@/lib/firestore-timestamp";
 
 type CreditState = {
@@ -33,7 +31,7 @@ export const useCreditStore = create<CreditState>((set) => ({
   error: null,
 
   subscribe: () => {
-    const ref = collection(clientDb, "credits");
+    const ref = bizCol("credits");
     const q = query(ref, orderBy("createdAt", "desc"));
     const unsub = onSnapshot(
       q,
@@ -67,7 +65,7 @@ export const useCreditStore = create<CreditState>((set) => ({
   },
 
   createCredit: async (data) => {
-    const ref = collection(clientDb, "credits");
+    const ref = bizCol("credits");
     if (data.name) {
       data.name = data.name.toUpperCase();
     }
@@ -82,7 +80,7 @@ export const useCreditStore = create<CreditState>((set) => ({
   },
 
   updateCredit: async (id, data) => {
-    const ref = doc(clientDb, "credits", id);
+    const ref = bizDoc("credits", id);
     if (data.name) {
       data.name = data.name.toUpperCase();
     }
@@ -93,7 +91,7 @@ export const useCreditStore = create<CreditState>((set) => ({
   },
 
   deleteCredit: async (id) => {
-    const ref = doc(clientDb, "credits", id);
+    const ref = bizDoc("credits", id);
     await deleteDoc(ref);
   },
 }));

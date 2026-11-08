@@ -1,15 +1,13 @@
 "use client";
 
+import { bizCol, bizDoc } from "@/lib/business";
 import { create } from "zustand";
 import {
-  collection,
-  doc,
   onSnapshot,
   addDoc,
   updateDoc,
   Timestamp,
 } from "firebase/firestore";
-import { clientDb } from "@/lib/firebase-config";
 import { asTimestamp } from "@/lib/firestore-timestamp";
 
 type CategoriesState = {
@@ -28,7 +26,7 @@ export const useCategoriesStore = create<CategoriesState>((set) => ({
   loading: true,
 
   subscribe: () => {
-    const ref = collection(clientDb, "categories");
+    const ref = bizCol("categories");
     const unsub = onSnapshot(ref, (snapshot) => {
       const data = snapshot.docs.map((doc) => {
         const raw = doc.data();
@@ -47,12 +45,12 @@ export const useCategoriesStore = create<CategoriesState>((set) => ({
   },
 
   createCategory: async (name) => {
-    const ref = collection(clientDb, "categories");
+    const ref = bizCol("categories");
     await addDoc(ref, { name, createdAt: Timestamp.now(), order: Date.now() });
   },
 
   updateCategory: async (id, category) => {
-    const ref = doc(clientDb, "categories", id);
+    const ref = bizDoc("categories", id);
     await updateDoc(ref, category);
   },
 }));

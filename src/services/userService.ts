@@ -1,6 +1,6 @@
-import { clientDb } from "@/lib/firebase-config";
+import { bizCol } from "@/lib/business";
+import { auth } from "@/lib/firebase-config";
 import {
-  collection,
   query,
   orderBy,
   onSnapshot,
@@ -13,7 +13,7 @@ export function listenUsers(
   onUpdate: (users: User[]) => void,
   onError: (err: Error) => void
 ): Unsubscribe {
-  const usersRef = collection(clientDb, "users");
+  const usersRef = bizCol("users");
   const q = query(usersRef, orderBy("createdAt", "desc"));
 
   return onSnapshot(
@@ -35,46 +35,43 @@ export function listenUsers(
   );
 }
 
+/** POSTs to a user API route with the signed-in admin's ID token (the route checks it). */
+async function postAsAdmin(path: string, body: unknown) {
+  const token = await auth.currentUser?.getIdToken();
+  if (!token) throw new Error("Sign in again.");
+  const res = await fetch(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const text = await res.text();
+    let message = text;
+    try {
+      message = (JSON.parse(text) as { error?: string }).error ?? text;
+    } catch {
+      // not JSON: use the text as is
+    }
+    throw new Error(message);
+  }
+}
+
 export async function createUser(data: {
   name: string;
   email: string;
   password: string;
   role: string;
 }) {
-  const res = await fetch("/api/users/createUser", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text);
-  }
+  await postAsAdmin("/api/users/createUser", data);
 }
 
 export async function updateUser(
   uid: string,
   data: Partial<User> & { password?: string }
 ) {
-  const res = await fetch("/api/users/updateUser", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ uid, ...data }),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text);
-  }
+  await postAsAdmin("/api/users/updateUser", { uid, ...data });
 }
 
 export async function deleteUser(uid: string) {
-  const res = await fetch("/api/users/deleteUser", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ uid }),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(text);
-  }
+  await postAsAdmin("/api/users/deleteUser", { uid });
 }

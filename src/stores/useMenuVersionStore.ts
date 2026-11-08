@@ -1,14 +1,13 @@
 "use client";
 
+import { bizDoc } from "@/lib/business";
 import { create } from "zustand";
 import {
-  doc,
   onSnapshot,
   updateDoc,
   increment,
   Timestamp,
 } from "firebase/firestore";
-import { clientDb } from "@/lib/firebase-config";
 import { asTimestamp } from "@/lib/firestore-timestamp";
 
 type MenuVersion = {
@@ -28,7 +27,7 @@ export const useMenuVersionStore = create<MenuVersionState>((set) => ({
   loading: true,
 
   subscribe: () => {
-    const ref = doc(clientDb, "menuVersion", "versionDoc");
+    const ref = bizDoc("menuVersion", "versionDoc");
 
     const unsub = onSnapshot(ref, (snapshot) => {
       if (snapshot.exists()) {
@@ -52,7 +51,7 @@ export const useMenuVersionStore = create<MenuVersionState>((set) => ({
   },
 
   publishMenu: async () => {
-    const ref = doc(clientDb, "menuVersion", "versionDoc");
+    const ref = bizDoc("menuVersion", "versionDoc");
 
     await updateDoc(ref, {
       lastUpdated: Timestamp.now(),
