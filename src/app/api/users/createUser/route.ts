@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { Timestamp } from "firebase-admin/firestore";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
-import { errorResponse, requireAdmin, requireRole } from "../_auth";
+import { errorResponse, requireAdmin, requireRole } from "@/app/api/_auth";
 
 /** Admin creates a staff/admin account in their own business. */
 export async function POST(req: Request) {

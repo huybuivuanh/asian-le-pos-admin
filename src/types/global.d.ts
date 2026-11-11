@@ -17,6 +17,37 @@ declare global {
     createdAt: Timestamp;
   }
 
+  // ---------- Rewards (read-only, from /api/rewards) ----------
+  /** businesses/{id}/members/{uid}. Dates are epoch millis (sent as JSON). */
+  interface RewardsMember {
+    id: string;
+    name: string;
+    email: string;
+    /** 10 digits, e.g. "3067647799". */
+    phone: string;
+    points: number;
+    joinedAt: number | null;
+  }
+
+  type RewardsTransactionType = "earn" | "redeem" | "reverse";
+
+  /**
+   * members/{uid}/transactions/{id}, written only by the rewards functions.
+   * Ids are `earn_<orderId>`, `welcome_<orderId>`, `redeem_<orderId>`, `reverse_<orderId>`.
+   */
+  interface RewardsTransaction {
+    id: string;
+    type: RewardsTransactionType;
+    /** Change to the balance: +42 earned, -100 redeemed; a reverse undoes one. */
+    points: number;
+    orderId: string;
+    createdAt: number | null;
+    /** earn only: pre-tax subtotal in dollars the points came from. */
+    subtotal?: number;
+    /** redeem only: dollars off the order. */
+    discount?: number;
+  }
+
   // ---------- Menu ----------
   interface FoodCategory {
     id?: string;

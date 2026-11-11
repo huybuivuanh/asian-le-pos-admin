@@ -24,6 +24,16 @@ export function formatOrderedAt(date: Date): string {
   });
 }
 
+/** Epoch millis → "Nov 10, 2026", or "—". */
+export function formatShortDate(millis: number | null | undefined): string {
+  if (millis == null) return "—";
+  return new Date(millis).toLocaleDateString(undefined, {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+}
+
 export function formatPhone(phone: string): string {
   const digits = phone.replace(/\D/g, "");
   if (digits.length > 7) {

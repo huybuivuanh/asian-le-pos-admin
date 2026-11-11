@@ -20,10 +20,12 @@ npm run lint     # Run ESLint
 src/
 ├── app/                    # Next.js App Router
 │   ├── (app)/              # Protected route group (auth-gated layout: Navbar + AppModal)
-│   │   ├── (standard)/     # Full-width pages: dashboard (/), orders, tables, customers, credits, users, …
+│   │   ├── (standard)/     # Full-width pages: dashboard (/), orders, tables, customers, rewards, credits, users, …
 │   │   └── menu/           # Collapsible sidebar + /menu/{categories,items,option-groups,options}
 │   ├── login/              # Sign-in page
-│   └── api/users/          # Server-side user management (firebase-admin); _auth.ts = admin token + business checks
+│   └── api/                # Server routes (firebase-admin); _auth.ts = admin token + business checks for all of them
+│       ├── users/          # Create/update/delete staff accounts
+│       └── rewards/        # Read-only: GET members, GET members/[uid]/transactions
 ├── features/               # Domain feature modules (named exports, file name = component name)
 │   ├── add-extras/         # AddExtraList, AddExtraForm
 │   ├── credits/            # CreditList, CreditTableRow, CreditForm
@@ -37,11 +39,12 @@ src/
 │   │   └── MenuSidebar.tsx
 │   ├── menu-changes/       # MenuChangeList, MenuChangeCard, MenuChangeForm, ItemChangeForm
 │   ├── orders/             # OrderHistoryView, OrderCard, OrderItemBlock, RewardsBadge
+│   ├── rewards/            # RewardsSection (stats + Refresh), MemberList, MemberTableRow, MemberHistoryDialog (popup) + MemberHistory
 │   ├── tables/             # TablesSection, AddTableDialog, EditTableDialog
 │   └── users/              # UserList, UserForm
 ├── stores/                 # Zustand stores, one per domain (+ useModalStore for popups)
 ├── providers/              # AuthProvider
-├── services/               # userService (calls Next.js API routes), rewardsService (Rewards Cloud Functions)
+├── services/               # adminApi (callAdminApi: API route + admin ID token), userService, rewardsMembersService (read-only rewards API), rewardsService (Rewards Cloud Functions)
 ├── lib/                    # Shared utilities and Firestore helpers
 │   ├── firebase-config.ts  # Firebase client SDK init (shared asianlepos project)
 │   ├── business.ts         # current business from the admin's claim; bizCol/bizDoc path helpers
@@ -51,6 +54,7 @@ src/
 │   ├── order-loyalty.ts    # Reverses rewards points on cancel
 │   ├── order-calculations.ts  # orderItemsSubtotal, calculateTaxBreakdown (same math as POS)
 │   ├── rewards-badge.ts    # Rewards badge text (same as POS)
+│   ├── rewards-members.ts  # Rewards page: member search/sort, stats, history row text
 │   ├── formatters.ts       # formatCurrency, formatTimestamp, formatOrderedAt, etc.
 │   ├── list-utils.ts       # matchesQuery, sortCustomers, sortByNameAndCreated
 │   ├── menu-item-option-groups.ts
@@ -71,7 +75,7 @@ src/
 Two data-access patterns co-exist:
 
 1. **Client → Firestore directly**: Zustand stores open `onSnapshot` listeners for real-time updates. Components read store state and call store actions.
-2. **Client → API route → firebase-admin → Firestore**: Used for privileged operations (user management). `src/services/` calls `POST /api/users/*`; the API route uses the admin SDK.
+2. **Client → API route → firebase-admin → Firestore**: Used for privileged operations (user management) and for reads the security rules don't allow from a browser (the rewards member list and history). `src/services/` calls `/api/users/*` and `/api/rewards/*` via `callAdminApi`; the API route uses the admin SDK.
 
 ### Store subscriptions
 
@@ -108,7 +112,8 @@ pos-admin uses the shared `asianlepos` project with the POS, KDS, Orders app, we
 
 - **All data is under `businesses/{businessId}/…`** — build client paths with `bizCol` / `bizDoc` (`src/lib/business.ts`), never `collection(clientDb, …)`.
 - **Only admins sign in:** custom claims `{ businessId, role: "admin" }`. `AuthProvider` checks after sign-in and on restore, sets the business, and signs out anyone else.
-- **User API routes** (`src/app/api/users/*`) use the Admin SDK, which skips security rules, so `_auth.ts` checks every call: the client sends the admin's ID token (`postAsAdmin` in `userService.ts`), `requireAdmin` verifies it, and the business always comes from that token — never the request body. Update/delete only touch users of the same business; an admin can't demote or delete themselves.
+- **API routes** (`src/app/api/*`) use the Admin SDK, which skips security rules, so `src/app/api/_auth.ts` checks every call: the client sends the admin's ID token (`callAdminApi` in `services/adminApi.ts`), `requireAdmin` verifies it, and the business always comes from that token — never the request body or URL. User update/delete only touch users of the same business; an admin can't demote or delete themselves.
+- **Rewards page** (`/rewards`) is read-only: `GET /api/rewards/members` and `GET /api/rewards/members/[uid]/transactions` read `businesses/{caller's business}/members…`. The rules keep `list` on members closed (staff can only `get` one member), so this page must go through these routes, not the client SDK. Never add point changes here — points only change through the rewards functions.
 - **Roles** are `staff` (POS, KDS, Orders app) and `admin` (everything). Creating/updating a user sets claims `{ businessId, role }` and writes the display copy to `businesses/{id}/users/{uid}`.
 - **Rewards** functions (same project) are called with the admin's login.
 - Security rules live in the separate `D:\Projects\asian-le-firebase` repo. The App Store review Demo is just another business.

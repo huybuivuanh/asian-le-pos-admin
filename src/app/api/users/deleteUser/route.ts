@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin";
-import { HttpError, errorResponse, requireAdmin, requireSameBusiness } from "../_auth";
+import { HttpError, errorResponse, requireAdmin, requireSameBusiness } from "@/app/api/_auth";
 
 /** Admin deletes a staff/admin account in their own business. */
 export async function POST(req: Request) {

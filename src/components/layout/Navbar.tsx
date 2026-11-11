@@ -17,6 +17,7 @@ const navLinks = [
   { href: "/menu-changes", label: "Menu Changes" },
   { href: "/add-extras", label: "Add Extras" },
   { href: "/customers", label: "Customers" },
+  { href: "/rewards", label: "Rewards" },
   { href: "/credits", label: "Credits" },
   { href: "/users", label: "Users" },
 ] as const;

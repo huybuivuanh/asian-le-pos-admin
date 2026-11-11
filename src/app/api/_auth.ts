@@ -1,4 +1,4 @@
-// Shared checks for the user-management API routes. These routes use the Admin SDK
+// Shared checks for the API routes (users, rewards). These routes use the Admin SDK
 // (which skips security rules), so they must check the caller themselves.
 import { NextResponse } from "next/server";
 import { getAdminAuth } from "@/lib/firebase-admin";
@@ -36,7 +36,7 @@ export async function requireAdmin(req: Request): Promise<Caller> {
     throw new HttpError(401, "Your session expired. Sign in again.");
   }
   if (decoded.role !== "admin" || typeof decoded.businessId !== "string" || !decoded.businessId) {
-    throw new HttpError(403, "Only admins can manage users.");
+    throw new HttpError(403, "Only admins can do this.");
   }
   return { uid: decoded.uid, businessId: decoded.businessId };
 }

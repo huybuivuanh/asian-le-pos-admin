@@ -1,5 +1,5 @@
 import { bizCol } from "@/lib/business";
-import { auth } from "@/lib/firebase-config";
+import { callAdminApi } from "@/services/adminApi";
 import {
   query,
   orderBy,
@@ -37,23 +37,7 @@ export function listenUsers(
 
 /** POSTs to a user API route with the signed-in admin's ID token (the route checks it). */
 async function postAsAdmin(path: string, body: unknown) {
-  const token = await auth.currentUser?.getIdToken();
-  if (!token) throw new Error("Sign in again.");
-  const res = await fetch(path, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-    body: JSON.stringify(body),
-  });
-  if (!res.ok) {
-    const text = await res.text();
-    let message = text;
-    try {
-      message = (JSON.parse(text) as { error?: string }).error ?? text;
-    } catch {
-      // not JSON: use the text as is
-    }
-    throw new Error(message);
-  }
+  await callAdminApi(path, { method: "POST", body });
 }
 
 export async function createUser(data: {
