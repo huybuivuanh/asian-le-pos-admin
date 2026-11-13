@@ -8,6 +8,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 npm run dev      # Start dev server (Next.js + Turbopack)
 npm run build    # Production build
 npm run lint     # Run ESLint
+
+# Cloud Functions (functions/, codebase "pos")
+cd functions && npm install && npm run build
+firebase deploy --only functions   # from the repo root
 ```
 
 ## Architecture
@@ -116,4 +120,5 @@ pos-admin uses the shared `asianlepos` project with the POS, KDS, Orders app, we
 - **Rewards page** (`/rewards`) is read-only: `GET /api/rewards/members` and `GET /api/rewards/members/[uid]/transactions` read `businesses/{caller's business}/members…`. The rules keep `list` on members closed (staff can only `get` one member), so this page must go through these routes, not the client SDK. Never add point changes here — points only change through the rewards functions.
 - **Roles** are `staff` (POS, KDS, Orders app) and `admin` (everything). Creating/updating a user sets claims `{ businessId, role }` and writes the display copy to `businesses/{id}/users/{uid}`.
 - **Rewards** functions (same project) are called with the admin's login.
+- **Cloud Functions** (`functions/src/index.ts`, codebase `pos`, moved here from the POS repo): two scheduled jobs that loop over every `businesses/{id}` — `purgeStaleOrders` (daily 4 AM UTC, deletes `dineInOrders` / `takeOutOrders` older than ~30 days, batches of 500) and `purgeStalePrintQueue` (daily midnight America/Regina, wipes every `printQueue`). They query each business's path, never a collection group, because old top-level collections with the same names are kept as a backup. Keep the codebase name `pos`, or the deploy treats them as new functions. `functions/` is excluded from the Next.js tsconfig, ESLint and App Hosting.
 - Security rules live in the separate `D:\Projects\asian-le-firebase` repo. The App Store review Demo is just another business.

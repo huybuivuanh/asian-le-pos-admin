@@ -47,6 +47,15 @@ Firebase App Hosting, backend `asianlepos-backend` (`firebase.json`). Pushing de
 The production env vars and the service-account secret are set on the backend in the
 Firebase console (there's no `apphosting.yaml`).
 
+### Cloud Functions
+
+`functions/` holds the POS's scheduled purge jobs (`purgeStaleOrders`, `purgeStalePrintQueue`, codebase `pos`). They're not part of App Hosting; deploy them separately:
+
+```bash
+cd functions && npm install && cd ..
+firebase deploy --only functions
+```
+
 ### Running locally
 
 ```bash
