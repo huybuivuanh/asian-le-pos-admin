@@ -5,6 +5,8 @@ export const metadata = {
   icons: {
     icon: "/icon.png",
   },
+  // Internal app: keep it out of search results.
+  robots: { index: false, follow: false },
 };
 
 export default function RootLayout({
