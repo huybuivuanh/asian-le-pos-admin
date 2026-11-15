@@ -192,7 +192,6 @@ export function OrderCard({
               </span>
             </div>
             {tb.discount != null && tb.discount.discountAmount > 0 ? (
-              <>
                 <div className="mb-1 flex justify-between">
                   <span className="text-base text-gray-600">
                     {formatDiscountLabel(tb.discount)}
@@ -201,15 +200,26 @@ export function OrderCard({
                     {formatDiscountAmount(tb.discount)}
                   </span>
                 </div>
-                <div className="mb-1 flex justify-between">
-                  <span className="text-base text-gray-700">
-                    Taxable Subtotal
-                  </span>
-                  <span className="text-base text-gray-700">
-                    ${tb.discount.taxableSubtotal.toFixed(2)}
-                  </span>
-                </div>
-              </>
+            ) : null}
+            {tb.rewards ? (
+              <div className="mb-1 flex justify-between">
+                <span className="text-base text-gray-600">
+                  Rewards ({tb.rewards.points} pts)
+                </span>
+                <span className="text-base text-gray-700">
+                  -${tb.rewards.amount.toFixed(2)}
+                </span>
+              </div>
+            ) : null}
+            {tb.taxableSubtotal < tb.subTotal ? (
+              <div className="mb-1 flex justify-between">
+                <span className="text-base text-gray-700">
+                  Taxable Subtotal
+                </span>
+                <span className="text-base text-gray-700">
+                  ${tb.taxableSubtotal.toFixed(2)}
+                </span>
+              </div>
             ) : null}
             <div className="mb-1 flex justify-between">
               <span className="text-base text-gray-700">PST (6%)</span>

@@ -73,21 +73,18 @@ export async function reverseCancelledOrderRewards(
         const snap = await tx.get(ref);
         if (!snap.exists()) return;
         const order = snap.data() as AnyOrder;
-        // The redeemed points went back to the member, so the rewards discount
-        // goes too — otherwise un-cancelling would keep a free discount.
-        const d = order.taxBreakDown?.discount;
-        const isRedemptionDiscount =
-          Boolean(loyalty?.redeemedAmount) &&
-          d?.discountType === DiscountType.Amount &&
-          d.discountValue === loyalty?.redeemedAmount;
+        // The redeemed points went back to the member, so the rewards come off the
+        // price too (otherwise un-cancelling would keep them free). The staff discount stays.
+        const tb = order.taxBreakDown;
+        const d = tb?.discount;
         tx.update(ref, {
           ...reversedFields,
-          ...(isRedemptionDiscount
+          ...(tb?.rewards
             ? {
                 taxBreakDown: calculateTaxBreakdown(
                   orderItemsSubtotal(order.orderItems),
-                  DiscountType.None,
-                  0,
+                  d?.discountType ?? DiscountType.None,
+                  d?.discountValue ?? 0,
                 ),
               }
             : {}),

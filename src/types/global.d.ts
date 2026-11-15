@@ -138,16 +138,26 @@ declare global {
     completed: boolean;
   }
 
+  /** Staff discount, taken off the subtotal. */
   interface Discount {
     discountType: DiscountType;
     discountValue: number;
     discountAmount: number;
-    taxableSubtotal: number;
+  }
+
+  /** Rewards points redeemed, taken off what's left after the staff discount. */
+  interface RewardsRedemption {
+    points: number;
+    /** Dollars actually taken off. */
+    amount: number;
   }
 
   interface TaxBreakDown {
     subTotal: number;
     discount?: Discount;
+    rewards?: RewardsRedemption;
+    /** subTotal − discount − rewards; what tax and points are calculated on. */
+    taxableSubtotal: number;
     pst: number;
     gst: number;
     total: number;

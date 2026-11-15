@@ -1,4 +1,5 @@
-// Same math as the POS app's domain/order/orderCalculations.ts.
+// Same math as the POS app's domain/order/orderCalculations.ts (staff discount, then
+// rewards, then tax on what's left).
 import { DiscountType } from "@/types/enum";
 
 export function orderItemsSubtotal(items: OrderItem[] | undefined): number {
@@ -24,21 +25,28 @@ export function calculateTaxBreakdown(
   itemsSubtotal: number,
   discountType: DiscountType = DiscountType.None,
   discountValue = 0,
+  rewards?: RewardsRedemption | null,
 ): TaxBreakDown {
-  if (itemsSubtotal <= 0) return { subTotal: 0, pst: 0, gst: 0, total: 0 };
+  if (itemsSubtotal <= 0) {
+    return { subTotal: 0, taxableSubtotal: 0, pst: 0, gst: 0, total: 0 };
+  }
   const discountAmount = calculateDiscountAmount(itemsSubtotal, discountType, discountValue);
-  const taxableSubtotal = Math.max(0, itemsSubtotal - discountAmount);
+  const afterDiscount = Math.max(0, itemsSubtotal - discountAmount);
+  const rewardsAmount = rewards ? Math.min(afterDiscount, Math.max(0, rewards.amount)) : 0;
+  const taxableSubtotal = afterDiscount - rewardsAmount;
   const pst = taxableSubtotal * 0.06;
   const gst = taxableSubtotal * 0.05;
-  const base: TaxBreakDown = {
+  return {
     subTotal: itemsSubtotal,
+    ...(discountType !== DiscountType.None && discountAmount > 0
+      ? { discount: { discountType, discountValue, discountAmount } }
+      : {}),
+    ...(rewards && rewardsAmount > 0
+      ? { rewards: { points: rewards.points, amount: rewardsAmount } }
+      : {}),
+    taxableSubtotal,
     pst,
     gst,
     total: taxableSubtotal + pst + gst,
-  };
-  if (discountType === DiscountType.None || discountAmount <= 0) return base;
-  return {
-    ...base,
-    discount: { discountType, discountValue, discountAmount, taxableSubtotal },
   };
 }
